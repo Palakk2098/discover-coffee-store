@@ -1,95 +1,88 @@
+'use client';
 import Image from "next/image";
 import styles from "./page.module.css";
+import Banner from "./components/banner";
+import Card from "./components/card";
+import { useContext, useEffect, useState } from "react";
+import { getCoffeeStores } from "./lib/coffee-stores-data"
+import useTrackLocation from "./hooks/use-track-location"
+import { ACTION_TYPES, useAppContext } from "./context";
 
-export default function Home() {
+export default function Home(props: any) {
+
+  const [coffeeStoreData, setCoffeeStoreData] = useState([]);
+  const [nearByCoffeeStore, setNearByCoffeeStore] = useState([])
+  const {dispatch,state}=useAppContext();
+  const {latLong,coffeeStores}=state;
+
+  const { handleTrackLocation,  errorMessage, isFindingLocation } = useTrackLocation();
+
+  const getCoffeeStoreData = async () => {
+
+    const data = await getCoffeeStores();
+    setCoffeeStoreData(data)
+  }
+
+  const getNearByCoffeeStore = async () => {
+
+    const data = await getCoffeeStores(latLong);
+    setNearByCoffeeStore(data)
+    dispatch({type:ACTION_TYPES.SET_COFFEE_STORES,payload:{coffeeStores:data}})
+  }
+
+  useEffect(() => {
+    getCoffeeStoreData()
+  }, [])
+
+  useEffect(() => {
+    if(latLong){
+    getNearByCoffeeStore()
+    }
+  }, [latLong])
+
+  const loaderProp = ({ src }: any) => {
+    return src;
+  }
+
+  const handleOnClick = () => {
+    
+    handleTrackLocation()
+  }
+ 
+
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main className={styles.main} >
+
+      <Banner buttonText={isFindingLocation ? "Locating..." : "View shops nearby"} handleOnClick={handleOnClick} />
+      {errorMessage && <p> Something went wrong : {errorMessage}</p>}
+      <div className={styles.heroImage}>
+        <Image src="/static/hero-image.png" width={700} height={400} alt="hero-image" loader={loaderProp} />
+      </div>
+
+      {coffeeStores?.length > 0 && <><h2 className={styles.heading2}>Stores near me</h2>
+        <div className={styles.cardLayout}>
+          {coffeeStores.map((store: any) => {
+            return <Card title={store.name} imgUrl={store.imgUrl || 'https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80'} href={`coffee-store/${store.fsq_id}`} className={styles.card} key={store.fsq_id} />
+          })}
         </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+      </>
+      }
+      {coffeeStoreData?.length > 0 && <><h2 className={styles.heading2}>Toronto Stores</h2>
+        <div className={styles.cardLayout}>
+          {coffeeStoreData.map((store: any) => {
+            return <Card title={store.name} imgUrl={store.imgUrl || 'https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80'} href={`coffee-store/${store.fsq_id}`} className={styles.card} key={store.fsq_id} />
+          })}
+        </div>
+      </>
+      }
     </main>
   );
 }
+
+
+
+
+
+
+
